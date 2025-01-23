@@ -1,0 +1,127 @@
+.diagram {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(to bottom right, #e0f7fa, #fff);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.step-button {
+  width: 120px;
+  height: 40px;
+  background-color: white;
+  color: #333;
+  border: 2px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+  cursor: pointer;
+  position: absolute;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.step-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0056b3;
+  transform: scale(1.2);
+}
+
+.path {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.main{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  flex-wrap: wrap;
+}
+.box-left, .box-right{
+  width: 48%;
+  padding: 10px;
+}
+@media (max-width: 1024px) {
+  .box-left, .box-right {
+    width: 100%; /* Stack the boxes vertically on mobile */
+    margin-bottom: 20px; /* Add space between boxes */
+  }
+  .card{
+    width: 100%;
+  }
+}
+/* Position the circle to follow the path */
+.circle {
+  fill: #e31662;
+  animation: followPath 10s linear infinite;
+}
+
+@keyframes followPath {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+/* Bind the animation to the SVG path */
+svg {
+  position: relative;
+}
+
+.circle {
+  position: absolute;
+  offset-path: path("M57.9231 1.02979H401.077C432.515 1.02979 458 26.5151 458 57.9529C458 89.3907 432.515 114.876 401.077 114.876L57.9231 114.069C26.4854 114.069 1 139.554 1 170.992C1 202.43 26.4854 227.915 57.9232 227.915L401.077 227.108C432.515 227.108 458 252.593 458 284.031C458 315.468 432.515 340.954 401.077 340.954H57.9232");
+  offset-rotate: 0deg;
+}
+
+
+.swiper-container {
+  position: relative;
+  padding: 20px;
+}
+
+.card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  color: white;
+  padding: 30px;
+  background: linear-gradient(45deg, hsl(229,76%,59%,1), hsl(258,41%,43%,1), hsl(338,82%,49%,1));
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.swiper-navigation {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  gap: 10px;
+}
+
+.swiper-prev,
+.swiper-next {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.swiper-prev:hover,
+.swiper-next:hover {
+  background: #0056b3;
+}
