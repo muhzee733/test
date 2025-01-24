@@ -1,85 +1,65 @@
 import React, { useState, useEffect, useRef } from "react";
-import Swiper from "swiper";
-import "swiper/css"; // Import Swiper styles
-import "swiper/css/navigation";
-import { Navigation } from "swiper/modules";
 
-const CustomFlowSVG = () => {
-  const [highlightedButton, setHighlightedButton] = useState(null);
-  const circleRef = useRef(null); // Reference for the moving circle
-  const buttonsRef = useRef([]); // References for the buttons
-  const swiperRef = useRef(null); // Ref for Swiper instance
+const CustomFlowSVG = ({setStep}) => {
+  const circleRef = useRef(null);
+  const pathRef = useRef(null);
+  const [pathLength, setPathLength] = useState(0);
+  const [progress, setProgress] = useState(0); // Progress for animation
+  const [nextStep, setNextStep] = useState(0.25); // Default starting from Step 1 to Step 2
+  const [animating, setAnimating] = useState(false); // Flag to control animation flow
+  const [highlightedButton, setHighlightedButton] = useState("Step 1"); // Start with Step 1 highlighted
+
+  // Button data for mapping
+  const buttons = [
+    { step: 0.25, label: "Step 1" },
+    { step: 0.35, label: "Step 2" },
+    { step: 0.65, label: "Step 3" },
+    { step: 1, label: "Step 4" },
+  ];
 
   useEffect(() => {
-    const animationDuration = 10000; // Total animation duration in milliseconds
-    const pathElement = document.getElementById("animated-path");
-    const pathLength = pathElement.getTotalLength();
+    if (pathRef.current) {
+      setPathLength(pathRef.current.getTotalLength());
+    }
+  }, []);
 
-    const animateLoop = () => {
-      let startTime = Date.now();
-
-      const updateCirclePosition = () => {
-        const elapsedTime = Date.now() - startTime;
-        const progress = Math.min(elapsedTime / animationDuration, 1); // Ensure it doesn't go beyond 100%
-
-        // Calculate the position on the path
-        const position = pathLength * progress;
-        const { x, y } = pathElement.getPointAtLength(position);
-
-        // Update the circle's position
-        const circle = circleRef.current;
-        if (circle) {
-          circle.setAttribute("cx", x);
-          circle.setAttribute("cy", y);
+  useEffect(() => {
+    const animateCircle = () => {
+      if (!animating) return; // Only animate if animating is true
+      setProgress((prevProgress) => {
+        if (prevProgress < nextStep) {
+          return prevProgress + 0.005; // Increment progress smoothly
         }
-
-        // Check for collision with buttons
-        buttonsRef.current.forEach((button, index) => {
-          if (button) {
-            const buttonRect = button.getBoundingClientRect();
-            const circleRect = circle.getBoundingClientRect();
-
-            // Simple collision detection
-            const isTouching =
-              circleRect.right > buttonRect.left &&
-              circleRect.left < buttonRect.right &&
-              circleRect.bottom > buttonRect.top &&
-              circleRect.top < buttonRect.bottom;
-
-            if (isTouching) {
-              setHighlightedButton(index); // Highlight the button being touched
-              // Move to corresponding slide in Swiper
-              if (swiperRef.current) {
-                swiperRef.current.swiper.slideTo(index); // Slide to the active slide
-              }
-            }
-          }
-        });
-
-        // If the animation is complete, restart the animation
-        if (progress < 1) {
-          requestAnimationFrame(updateCirclePosition);
-        } else {
-          // Hide the circle briefly, reset its position, and restart the animation
-          if (circle) {
-            circle.style.opacity = "0"; // Hide the circle
-          }
-          setTimeout(() => {
-            if (circle) {
-              circle.style.opacity = "1"; // Reappear the circle
-            }
-            startTime = Date.now(); // Reset start time
-            setHighlightedButton(null); // Reset button highlight
-            requestAnimationFrame(updateCirclePosition); // Restart animation
-          }, 500); // 500ms delay for the "disappear and reappear" effect
-        }
-      };
-
-      requestAnimationFrame(updateCirclePosition);
+        setAnimating(false); // Stop animation when reaching the target step
+        return prevProgress;
+      });
     };
 
-    animateLoop();
-  }, []);
+    const interval = setInterval(animateCircle, 50); // Update every 50ms
+    return () => clearInterval(interval); // Clean up interval on component unmount
+  }, [nextStep, animating]);
+
+  useEffect(() => {
+    if (circleRef.current && pathRef.current) {
+      const point = pathRef.current.getPointAtLength(progress * pathLength);
+      circleRef.current.setAttribute("cx", point.x);
+      circleRef.current.setAttribute("cy", point.y);
+
+      // Check if the circle is close to any button's position
+      buttons.forEach((button) => {
+        const threshold = 0.02; // Allow a small margin for "touching"
+        if (Math.abs(progress - button.step) < threshold) {
+          setHighlightedButton(button.label); // Highlight the button when reached
+          setStep(button.label)
+        }
+      });
+    }
+  }, [progress, pathLength]); // Recalculate position when progress changes
+
+  const handleStepButtonClick = (step) => {
+    setNextStep(step); // Set the target step
+    setAnimating(true); // Start animating
+  };
 
   return (
     <div style={{ position: "relative", width: "600px", margin: "auto" }}>
@@ -91,6 +71,7 @@ const CustomFlowSVG = () => {
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
+          ref={pathRef}
           d="M57.9231 1.02979H401.077C432.515 1.02979 458 26.5151 458 57.9529C458 89.3907 432.515 114.876 401.077 114.876L57.9231 114.069C26.4854 114.069 1 139.554 1 170.992C1 202.43 26.4854 227.915 57.9232 227.915L401.077 227.108C432.515 227.108 458 252.593 458 284.031C458 315.468 432.515 340.954 401.077 340.954H57.9232"
           id="animated-path"
           stroke="url(#paint0_linear)"
@@ -117,70 +98,41 @@ const CustomFlowSVG = () => {
           </linearGradient>
         </defs>
       </svg>
-      <div
-        ref={(el) => (buttonsRef.current[0] = el)}
-        style={{
-          position: "absolute",
-          top: "0px",
-          left: "70px",
-          background:
-            highlightedButton === 0 ? "hsl(338,82%,49%,1)" : "#4765E6",
-          color: "white",
-          padding: "10px 20px",
-          borderRadius: "30px",
-          cursor: "pointer",
-        }}
-      >
-        Step 1
-      </div>
-      <div
-        ref={(el) => (buttonsRef.current[1] = el)}
-        style={{
-          position: "absolute",
-          top: "140px",
-          left: "200px",
-          background:
-            highlightedButton === 1 ? "hsl(338,82%,49%,1)" : "#4765E6",
-          color: "white",
-          padding: "10px 20px",
-          borderRadius: "30px",
-          cursor: "pointer",
-        }}
-      >
-        Step 2
-      </div>
-      <div
-        ref={(el) => (buttonsRef.current[2] = el)}
-        style={{
-          position: "absolute",
-          top: "277px",
-          left: "350px",
-          background:
-            highlightedButton === 2 ? "hsl(338,82%,49%,1)" : "#4765E6",
-          color: "white",
-          padding: "10px 20px",
-          borderRadius: "30px",
-          cursor: "pointer",
-        }}
-      >
-        Step 3
-      </div>
-      <div
-        ref={(el) => (buttonsRef.current[3] = el)}
-        style={{
-          position: "absolute",
-          top: "420px",
-          left: "70px",
-          background:
-            highlightedButton === 3 ? "hsl(338,82%,49%,1)" : "#4765E6",
-          color: "white",
-          padding: "10px 20px",
-          borderRadius: "30px",
-          cursor: "pointer",
-        }}
-      >
-        Step 4
-      </div>
+
+      {buttons.map((button, index) => (
+        <button
+          key={index}
+          onClick={() => handleStepButtonClick(button.step)}
+          style={{
+            position: "absolute",
+            top:
+              index === 0
+                ? "-6px"
+                : index === 1
+                ? "28%"
+                : index === 2
+                ? "58%"
+                : "auto",
+            left:
+              index === 0
+                ? "17px"
+                : index === 1
+                ? "48%"
+                : index === 2
+                ? "300px"
+                : "20px",
+            bottom: index === 3 ? "20px" : "auto",
+            backgroundColor:
+              highlightedButton === button.label ? "green" : "gray",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "30px",
+            cursor: "pointer",
+          }}
+        >
+          {button.label}
+        </button>
+      ))}
     </div>
   );
 };

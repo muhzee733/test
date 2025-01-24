@@ -1,15 +1,16 @@
 import FlowDiagram from "@/components/FlowDiagram";
 import SwiperSlider from "@/components/SwiperSlider";
-import React from "react";
+import React, { useState } from "react";
 
 const Index = () => {
+  const [step, setStep] = useState('');
   return (
     <div className="main">
       <div className="box-left">
-        <SwiperSlider />
+        <SwiperSlider step={step}/>
       </div>
       <div className="box-right">
-        <FlowDiagram />
+        <FlowDiagram setStep={setStep}/>
       </div>
     </div>
   );
