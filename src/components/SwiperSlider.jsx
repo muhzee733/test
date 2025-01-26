@@ -1,11 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css"; // Import Swiper styles
 import "swiper/css/navigation";
 import { Navigation } from "swiper/modules";
 
-const SwiperSlider = ({ step }) => {
-  console.log(step);
+const SwiperSlider = ({ handleStepButtonClick, nextStep }) => {
+  // Define the steps with labels
+  const steps = [
+    { step: 0.25, label: "Step 1" },
+    { step: 0.35, label: "Step 2" },
+    { step: 0.65, label: "Step 3" },
+    { step: 1, label: "Step 4" },
+  ];
 
   // Static card texts
   const cardTexts = [
@@ -21,50 +27,73 @@ const SwiperSlider = ({ step }) => {
   // Handle the step change and update the active slide
   useEffect(() => {
     if (swiperRef.current) {
-      let slideIndex = 0;
-
-      if (step === "Step 2") {
-        slideIndex = 1; // 2nd slide
-      } else if (step === "Step 3") {
-        slideIndex = 2; // 3rd slide
-      } else if (step === "Step 4") {
-        slideIndex = 3; // 4th slide
+      const slideIndex = steps.findIndex((stepObj) => stepObj.step === nextStep); // Find the index of nextStep
+      if (slideIndex !== -1) {
+        // Use the swiper instance to change the active slide dynamically
+        swiperRef.current.swiper.slideTo(slideIndex);
       }
-
-      // Use the swiper instance to change the active slide dynamically
-      swiperRef.current.swiper.slideTo(slideIndex);
     }
-  }, [step]);
+  }, [nextStep]);
+
+  const resetSlider = () => {
+    handleStepButtonClick(0);
+  };
+
+  const goToPreviousStep = () => {
+    const currentIndex = steps.findIndex((stepObj) => stepObj.step === nextStep);
+    const prevIndex = currentIndex === 0 ? steps.length - 1 : currentIndex - 1;
+    handleStepButtonClick(steps[prevIndex].step);
+  };
+
+  const goToNextStep = () => {
+    const currentIndex = steps.findIndex((stepObj) => stepObj.step === nextStep);
+    const nextIndex = currentIndex === steps.length - 1 ? 0 : currentIndex + 1;
+    handleStepButtonClick(steps[nextIndex].step);
+  };
 
   return (
     <div className="swiper-container">
       <div className="card">
-        {/* Static Card Layout */}
+        <div className="card-header">
+          Slide {steps.findIndex((stepObj) => stepObj.step === nextStep) + 1}/4
+        </div>
         <Swiper
-          ref={swiperRef} // Connect swiperRef to Swiper
+          ref={swiperRef}
           slidesPerView={1}
           spaceBetween={10}
           navigation={{ nextEl: ".swiper-next", prevEl: ".swiper-prev" }}
           modules={[Navigation]}
         >
-          <SwiperSlide>
-            <div className="card-text">{cardTexts[0]}</div>
-          </SwiperSlide>
-          <SwiperSlide>
-            <div className="card-text">{cardTexts[1]}</div>
-          </SwiperSlide>
-          <SwiperSlide>
-            <div className="card-text">{cardTexts[2]}</div>
-          </SwiperSlide>
-          <SwiperSlide>
-            <div className="card-text">{cardTexts[3]}</div>
-          </SwiperSlide>
+          {steps.map((stepObj, index) => (
+            <SwiperSlide key={index}>
+              <div className="card-text">{cardTexts[index]}</div>
+            </SwiperSlide>
+          ))}
         </Swiper>
       </div>
 
       <div className="swiper-navigation">
-        <button className="swiper-prev">❮</button>
-        <button className="swiper-next">❯</button>
+        <button
+          className="swiper-prev"
+          onClick={goToPreviousStep} // Using the updated method for prev
+        >
+          ❮
+        </button>
+        <button
+          className="swiper-next"
+          onClick={goToNextStep} // Using the updated method for next
+        >
+          ❯
+        </button>
+
+        {/* Reset Button - Only active if nextStep is greater than 0.25 (Step 2 and onward) */}
+        <button
+          className={`reset-button ${nextStep > 0.25 ? "active" : ""}`}
+          onClick={resetSlider}
+          disabled={nextStep <= 0.25}
+        >
+          Reset
+        </button>
       </div>
     </div>
   );

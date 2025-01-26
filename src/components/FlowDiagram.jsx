@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const CustomFlowSVG = ({setStep}) => {
+const CustomFlowSVG = ({
+  setStep,
+  text,
+  handleStepButtonClick,
+  animating,
+  nextStep,
+  setNextStep,
+  setAnimating,
+}) => {
   const circleRef = useRef(null);
   const pathRef = useRef(null);
   const [pathLength, setPathLength] = useState(0);
   const [progress, setProgress] = useState(0); // Progress for animation
-  const [nextStep, setNextStep] = useState(0.25); // Default starting from Step 1 to Step 2
-  const [animating, setAnimating] = useState(false); // Flag to control animation flow
   const [highlightedButton, setHighlightedButton] = useState("Step 1"); // Start with Step 1 highlighted
 
   // Button data for mapping
@@ -28,10 +34,13 @@ const CustomFlowSVG = ({setStep}) => {
       if (!animating) return; // Only animate if animating is true
       setProgress((prevProgress) => {
         if (prevProgress < nextStep) {
-          return prevProgress + 0.005; // Increment progress smoothly
+          return Math.min(prevProgress + 0.005, nextStep); // Increment progress
+        } else if (prevProgress > nextStep) {
+          return Math.max(prevProgress - 0.005, nextStep); // Decrement progress
+        } else {
+          setAnimating(false); // Stop animation when reaching the target step
+          return prevProgress;
         }
-        setAnimating(false); // Stop animation when reaching the target step
-        return prevProgress;
       });
     };
 
@@ -50,17 +59,11 @@ const CustomFlowSVG = ({setStep}) => {
         const threshold = 0.02; // Allow a small margin for "touching"
         if (Math.abs(progress - button.step) < threshold) {
           setHighlightedButton(button.label); // Highlight the button when reached
-          setStep(button.label)
+          setStep(button.label);
         }
       });
     }
   }, [progress, pathLength]); // Recalculate position when progress changes
-
-  const handleStepButtonClick = (step) => {
-    setNextStep(step); // Set the target step
-    setAnimating(true); // Start animating
-  };
-
   return (
     <div style={{ position: "relative", width: "600px", margin: "auto" }}>
       <svg
@@ -107,11 +110,11 @@ const CustomFlowSVG = ({setStep}) => {
             position: "absolute",
             top:
               index === 0
-                ? "-6px"
+                ? "-12px"
                 : index === 1
-                ? "28%"
+                ? "26%"
                 : index === 2
-                ? "58%"
+                ? "55%"
                 : "auto",
             left:
               index === 0
@@ -123,11 +126,32 @@ const CustomFlowSVG = ({setStep}) => {
                 : "20px",
             bottom: index === 3 ? "20px" : "auto",
             backgroundColor:
-              highlightedButton === button.label ? "green" : "gray",
-            color: "white",
-            padding: "10px 20px",
+              highlightedButton === button.label ? "#e31662" : "#e0e0e0",
+            color: highlightedButton === button.label ? "white" : "black",
+            padding: "20px 40px",
             borderRadius: "30px",
             cursor: "pointer",
+            border:
+              highlightedButton === button.label
+                ? "2px solid #544eb8"
+                : "2px solid #544eb8",
+            fontSize: "16px",
+            fontWeight: "bold",
+            transition: "all 0.3s ease", // Smooth transition for all properties
+            boxShadow:
+              highlightedButton === button.label
+                ? "0px 0px 15px rgba(227, 22, 98, 0.6)" // Add shadow for active button
+                : "none",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "#d21552"; // Change background on hover
+            e.target.style.borderColor = "#544eb8"; // Add border change
+          }}
+          onMouseLeave={(e) => {
+            if (highlightedButton !== button.label) {
+              e.target.style.backgroundColor = "#e0e0e0"; // Revert back to default
+              e.target.style.borderColor = "#544eb8"; // Revert border
+            }
           }}
         >
           {button.label}
